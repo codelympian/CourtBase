@@ -1,9 +1,10 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   Building2,
-  CalendarClock,
+  MapPin,
   TrendingDown,
   TrendingUp,
   Trophy,
@@ -21,14 +22,7 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMe } from "@/hooks/use-auth";
-
-// Placeholder data — replaced by live API queries in Phase 2.
-const stats = [
-  { label: "Total Players", value: "—", icon: Users, hint: "Registered athletes" },
-  { label: "Total Clubs", value: "—", icon: Building2, hint: "Across all states" },
-  { label: "Active Tournaments", value: "—", icon: Trophy, hint: "Currently running" },
-  { label: "Upcoming Tournaments", value: "—", icon: CalendarClock, hint: "Next 30 days" },
-];
+import { statsApi } from "@/lib/resources";
 
 const rankingTrend = [
   { month: "Jan", points: 3200 },
@@ -45,6 +39,38 @@ const recentChanges = [
 
 export default function DashboardPage() {
   const { data: me } = useMe();
+  const { data: overview } = useQuery({
+    queryKey: ["stats", "overview"],
+    queryFn: () => statsApi.overview(),
+  });
+
+  const fmt = (n: number | undefined) => (n === undefined ? "—" : n.toLocaleString());
+  const stats = [
+    {
+      label: "Total Players",
+      value: fmt(overview?.total_players),
+      icon: Users,
+      hint: `${fmt(overview?.active_players)} active`,
+    },
+    {
+      label: "Total Clubs",
+      value: fmt(overview?.total_clubs),
+      icon: Building2,
+      hint: "Across all states",
+    },
+    {
+      label: "State Associations",
+      value: fmt(overview?.total_states),
+      icon: MapPin,
+      hint: "Registered bodies",
+    },
+    {
+      label: "Active Tournaments",
+      value: fmt(overview?.active_tournaments),
+      icon: Trophy,
+      hint: `${fmt(overview?.total_tournaments)} total`,
+    },
+  ];
 
   return (
     <div className="space-y-6">

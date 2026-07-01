@@ -15,11 +15,13 @@ Built in phases; each phase ends functional, tested, and deployable.
 - [x] Frontend scaffold: Next.js 15, Tailwind, shadcn/ui, TanStack Query, login + dashboard shell
 - [x] Backend auth tests
 
-## Phase 2 — Player / Club / State management
-- [ ] CRUD APIs + UI for state associations, clubs, players
-- [ ] CSV/Excel import & export for players
-- [ ] Search, filtering, pagination
-- [ ] Photo/logo upload to Supabase Storage
+## ✅ Phase 2 — Player / Club / State management (current)
+- [x] CRUD APIs + UI for state associations, clubs, players (tenant-scoped, soft delete, audited)
+- [x] CSV/Excel import & export for players (openpyxl; upsert by federation code)
+- [x] Search, filtering (status/gender/club/state), pagination
+- [x] Dashboard stat cards wired to a live `/stats/overview` endpoint
+- [x] 20 backend tests passing, ruff clean; frontend build + typecheck pass
+- [ ] Photo/logo upload to Supabase Storage (URL fields ready; upload deferred — needs Supabase keys)
 
 ## Phase 3 — Tournaments
 - [ ] Tournament + event CRUD, status lifecycle

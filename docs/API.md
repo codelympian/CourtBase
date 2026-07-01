@@ -44,18 +44,29 @@ All list endpoints accept `?page=&size=&q=&sort=` and return a paginated envelop
 }
 ```
 
-## Phase 2 — Org & people (planned)
+## Phase 2 — Org & people (implemented)
 
-| Method | Path | Roles |
-|--------|------|-------|
-| GET/POST | `/states` | view: any auth · write: federation_admin |
-| GET/PUT/DELETE | `/states/{id}` | federation_admin |
-| GET/POST | `/clubs` | view: any auth · write: federation_admin |
-| GET/PUT/DELETE | `/clubs/{id}` | federation_admin / club_admin (own) |
-| GET/POST | `/players` | view: any auth · write: federation_admin / club_admin (own club) |
-| GET/PUT/DELETE | `/players/{id}` | federation_admin / club_admin (own) |
-| POST | `/players/import` | federation_admin (CSV/Excel) |
-| GET | `/players/export` | federation_admin (CSV/Excel) |
+All list endpoints support `?page=&size=` and return the pagination envelope; writes are
+tenant-scoped and audited.
+
+| Method | Path | Query / body | Roles |
+|--------|------|--------------|-------|
+| GET | `/states` | `q, page, size` | any authenticated |
+| POST | `/states` | StateCreate | `states:manage` (federation_admin) |
+| GET/PUT/DELETE | `/states/{id}` | — / StateUpdate / — | read: any · write: `states:manage` |
+| GET | `/clubs` | `q, state_id, page, size` | any authenticated |
+| POST | `/clubs` | ClubCreate | `clubs:manage` |
+| GET/PUT/DELETE | `/clubs/{id}` | — / ClubUpdate / — | read: any · write: `clubs:manage` |
+| GET | `/players` | `q, status, gender, club_id, state_id, page, size` | any authenticated |
+| POST | `/players` | PlayerCreate | `players:manage` |
+| GET/PUT/DELETE | `/players/{id}` | — / PlayerUpdate / — | read: any · write: `players:manage` |
+| POST | `/players/import` | multipart `file` (CSV/XLSX), `?federation_id` (super admin) | `players:import` |
+| GET | `/players/export` | `format=csv\|xlsx` | `reports:export` |
+| GET | `/stats/overview` | — | any authenticated |
+
+Players carry derived, unstored `age` and `age_category` (U11…U19 / Senior) in responses.
+Import upserts by `(federation_id, federation_player_code)`; club/state are matched by name
+within the federation. Returns `{created, updated, skipped, errors[]}`.
 
 ## Phase 3 — Tournaments (planned)
 

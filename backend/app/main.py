@@ -12,6 +12,20 @@ from app import __version__
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.rate_limit import limiter
+from app.services.errors import (
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+    ServiceError,
+    ValidationError,
+)
+
+_SERVICE_ERROR_STATUS: dict[type[ServiceError], int] = {
+    NotFoundError: 404,
+    ConflictError: 409,
+    ValidationError: 422,
+    ForbiddenError: 403,
+}
 
 
 def create_app() -> FastAPI:
@@ -34,6 +48,14 @@ def create_app() -> FastAPI:
             status_code=429,
             content={"detail": f"Rate limit exceeded: {exc.detail}"},
         )
+
+    @app.exception_handler(ServiceError)
+    async def _service_error_handler(request: Request, exc: ServiceError):
+        status_code = next(
+            (code for cls, code in _SERVICE_ERROR_STATUS.items() if isinstance(exc, cls)),
+            400,
+        )
+        return JSONResponse(status_code=status_code, content={"detail": str(exc)})
 
     # CORS
     app.add_middleware(

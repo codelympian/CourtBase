@@ -53,3 +53,51 @@ def _seed_roles():
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(app)
+
+
+@pytest.fixture
+def admin_ctx(client):
+    """A federation + a logged-in federation_admin. Returns an object with
+    ``.client``, ``.headers`` (Bearer), and ``.federation_id``."""
+    import uuid
+    from types import SimpleNamespace
+
+    from app.core.database import SessionLocal
+    from app.core.security import hash_password
+    from app.models.enums import RoleName
+    from app.models.federation import Federation
+    from app.models.role import Role
+    from app.models.user import User
+
+    db = SessionLocal()
+    try:
+        slug = f"fed-{uuid.uuid4().hex[:8]}"
+        fed = Federation(name=f"Fed {slug}", slug=slug, is_active=True)
+        db.add(fed)
+        db.commit()
+        db.refresh(fed)
+
+        role = db.query(Role).filter(Role.name == RoleName.federation_admin.value).first()
+        email = f"admin_{uuid.uuid4().hex[:8]}@example.com"
+        password = "Adm1nPass!"
+        user = User(
+            federation_id=fed.id,
+            email=email,
+            hashed_password=hash_password(password),
+            full_name="Fed Admin",
+            is_active=True,
+            roles=[role],
+        )
+        db.add(user)
+        db.commit()
+        fed_id = str(fed.id)
+    finally:
+        db.close()
+
+    resp = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    token = resp.json()["access_token"]
+    return SimpleNamespace(
+        client=client,
+        headers={"Authorization": f"Bearer {token}"},
+        federation_id=fed_id,
+    )

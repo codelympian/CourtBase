@@ -95,6 +95,32 @@ export async function apiFetch<T>(
   return res.json() as Promise<T>;
 }
 
+export async function apiUpload<T>(path: string, formData: FormData, retry = true): Promise<T> {
+  const headers = new Headers();
+  const access = tokenStore.access;
+  if (access) headers.set("Authorization", `Bearer ${access}`);
+  const res = await fetch(`${API_V1}${path}`, { method: "POST", body: formData, headers });
+  if (res.status === 401 && retry && tokenStore.refresh) {
+    const ok = await refreshTokens();
+    if (ok) return apiUpload<T>(path, formData, false);
+  }
+  if (!res.ok) throw new ApiError(res.status, await parseError(res));
+  return res.json() as Promise<T>;
+}
+
+export async function apiDownload(path: string, retry = true): Promise<Blob> {
+  const headers = new Headers();
+  const access = tokenStore.access;
+  if (access) headers.set("Authorization", `Bearer ${access}`);
+  const res = await fetch(`${API_V1}${path}`, { headers });
+  if (res.status === 401 && retry && tokenStore.refresh) {
+    const ok = await refreshTokens();
+    if (ok) return apiDownload(path, false);
+  }
+  if (!res.ok) throw new ApiError(res.status, await parseError(res));
+  return res.blob();
+}
+
 // ---------------------------------------------------------------- auth API
 export interface Me {
   id: string;
