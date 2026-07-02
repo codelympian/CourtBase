@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -28,9 +29,16 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "sqlite+pysqlite:///./bfms_dev.db"
+    # For managed Postgres over TLS (Supabase). False = encrypt without CA verification
+    # (equivalent to libpq sslmode=require); set True in production with a trusted CA.
+    DATABASE_SSL_VERIFY: bool = False
 
-    # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    # CORS. NoDecode: keep pydantic-settings from JSON-parsing the env value so the
+    # validator below can accept a plain comma-separated string.
+    CORS_ORIGINS: Annotated[list[str], NoDecode] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 
     # Rate limiting
     RATE_LIMIT_DEFAULT: str = "200/minute"
