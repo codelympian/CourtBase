@@ -129,7 +129,7 @@ export interface Overview {
 }
 
 // ------------------------------------------------------------------ helpers
-function qs(params: Record<string, string | number | undefined | null>): string {
+function qs(params: Record<string, string | number | boolean | undefined | null>): string {
   const sp = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== "") sp.set(k, String(v));
@@ -204,4 +204,201 @@ export const playersApi = {
 // ------------------------------------------------------------------ stats API
 export const statsApi = {
   overview: () => apiFetch<Overview>("/stats/overview"),
+};
+
+// ------------------------------------------------------------ event categories
+export type Discipline = "singles" | "doubles";
+export type GenderScope = "men" | "women" | "mixed" | "any";
+
+export interface EventCategory {
+  id: string;
+  federation_id: string | null;
+  code: string;
+  name: string;
+  discipline: Discipline;
+  gender_scope: GenderScope;
+  age_min: number | null;
+  age_max: number | null;
+  is_active: boolean;
+}
+
+export type EventCategoryInput = {
+  code: string;
+  name: string;
+  discipline: Discipline;
+  gender_scope?: GenderScope;
+  age_min?: number | null;
+  age_max?: number | null;
+};
+
+export const categoriesApi = {
+  list: (activeOnly = true) =>
+    apiFetch<EventCategory[]>(`/event-categories${qs({ active_only: activeOnly })}`),
+  create: (data: EventCategoryInput) =>
+    apiFetch<EventCategory>("/event-categories", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<EventCategoryInput> & { is_active?: boolean }) =>
+    apiFetch<EventCategory>(`/event-categories/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string) =>
+    apiFetch<{ detail: string }>(`/event-categories/${id}`, { method: "DELETE" }),
+};
+
+// ---------------------------------------------------------------- tournaments
+export type TournamentLevel =
+  | "national_championship"
+  | "open"
+  | "invitational"
+  | "ranking";
+export type TournamentStatus =
+  | "draft"
+  | "registration_open"
+  | "registration_closed"
+  | "ongoing"
+  | "completed";
+
+export interface Tournament {
+  id: string;
+  federation_id: string;
+  name: string;
+  venue: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  level: TournamentLevel;
+  status: TournamentStatus;
+  organizer: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TournamentDetail extends Tournament {
+  event_count: number;
+}
+
+export type TournamentInput = {
+  name: string;
+  venue?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  level: TournamentLevel;
+  organizer?: string | null;
+};
+
+export type EventStatus = "pending" | "draw_published" | "ongoing" | "completed";
+
+export interface TournamentEvent {
+  id: string;
+  federation_id: string;
+  tournament_id: string;
+  category_id: string;
+  name: string;
+  draw_size: number | null;
+  status: EventStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TournamentEventDetail extends TournamentEvent {
+  category_name: string | null;
+  registration_count: number;
+}
+
+export const tournamentsApi = {
+  list: (q = "", status: TournamentStatus | "" = "", page = 1, size = 20) =>
+    apiFetch<Paginated<Tournament>>(`/tournaments${qs({ q, status, page, size })}`),
+  get: (id: string) => apiFetch<TournamentDetail>(`/tournaments/${id}`),
+  create: (data: TournamentInput) =>
+    apiFetch<Tournament>("/tournaments", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<TournamentInput> & { status?: TournamentStatus }) =>
+    apiFetch<Tournament>(`/tournaments/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: string) => apiFetch<{ detail: string }>(`/tournaments/${id}`, { method: "DELETE" }),
+  finalize: (id: string) => apiFetch<Tournament>(`/tournaments/${id}/finalize`, { method: "POST" }),
+  listEvents: (id: string) => apiFetch<TournamentEvent[]>(`/tournaments/${id}/events`),
+  createEvent: (id: string, category_id: string, name?: string) =>
+    apiFetch<TournamentEvent>(`/tournaments/${id}/events`, {
+      method: "POST",
+      body: JSON.stringify({ category_id, name }),
+    }),
+};
+
+// --------------------------------------------------------------------- events
+export const eventsApi = {
+  get: (id: string) => apiFetch<TournamentEventDetail>(`/events/${id}`),
+  remove: (id: string) => apiFetch<{ detail: string }>(`/events/${id}`, { method: "DELETE" }),
+  listRegistrations: (id: string, page = 1, size = 100) =>
+    apiFetch<Paginated<Registration>>(`/events/${id}/registrations${qs({ page, size })}`),
+  createRegistration: (id: string, data: RegistrationInput) =>
+    apiFetch<Registration>(`/events/${id}/registrations`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  generateDraw: (id: string) =>
+    apiFetch<BracketMatch[]>(`/events/${id}/draw`, { method: "POST" }),
+  getDraw: (id: string) => apiFetch<BracketMatch[]>(`/events/${id}/draw`),
+  resetDraw: (id: string) => apiFetch<{ detail: string }>(`/events/${id}/draw`, { method: "DELETE" }),
+};
+
+// --------------------------------------------------------------- registrations
+export type RegistrationStatus = "pending" | "confirmed" | "withdrawn" | "rejected";
+
+export interface Registration {
+  id: string;
+  federation_id: string;
+  event_id: string;
+  player_id: string;
+  partner_player_id: string | null;
+  seed: number | null;
+  status: RegistrationStatus;
+  created_at: string;
+  player_name?: string | null;
+  partner_name?: string | null;
+}
+
+export type RegistrationInput = {
+  player_id: string;
+  partner_player_id?: string | null;
+  seed?: number | null;
+};
+
+export const registrationsApi = {
+  update: (id: string, data: { seed?: number | null; status?: RegistrationStatus }) =>
+    apiFetch<Registration>(`/registrations/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: string) =>
+    apiFetch<{ detail: string }>(`/registrations/${id}`, { method: "DELETE" }),
+};
+
+// -------------------------------------------------------------------- matches
+export type MatchStatus = "scheduled" | "in_progress" | "completed" | "walkover" | "bye";
+
+export interface Match {
+  id: string;
+  federation_id: string;
+  event_id: string;
+  round: number;
+  position: number;
+  player1_id: string | null;
+  player2_id: string | null;
+  winner_id: string | null;
+  score: number[][] | null;
+  status: MatchStatus;
+  scheduled_at: string | null;
+  next_match_id: string | null;
+  player1_name?: string | null;
+  player2_name?: string | null;
+  winner_name?: string | null;
+}
+
+export interface BracketMatch extends Match {
+  round_name: string;
+}
+
+export type MatchScoreInput =
+  | { score: number[][]; walkover_winner_id?: never }
+  | { walkover_winner_id: string; score?: never };
+
+export const matchesApi = {
+  get: (id: string) => apiFetch<Match>(`/matches/${id}`),
+  score: (id: string, data: MatchScoreInput) =>
+    apiFetch<Match>(`/matches/${id}/score`, { method: "POST", body: JSON.stringify(data) }),
 };

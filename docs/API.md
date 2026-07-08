@@ -74,10 +74,30 @@ Players carry derived, unstored `age` and `age_category` (U11…U19 / Senior) in
 Import upserts by `(federation_id, federation_player_code)`; club/state are matched by name
 within the federation. Returns `{created, updated, skipped, errors[]}`.
 
-## Phase 3 — Tournaments (planned)
+## Phase 3 — Tournaments (implemented)
 
-`/tournaments`, `/tournaments/{id}/events`, `/events/{id}/registrations`,
-`/events/{id}/draw` (generate), `/matches/{id}/score`, `/tournaments/{id}/finalize`.
+| Method | Path | Roles |
+|--------|------|-------|
+| GET/POST | `/event-categories` | view: any auth · write: `tournaments:manage` |
+| GET/PUT/DELETE | `/event-categories/{id}` | `tournaments:manage` (global cats: super admin only) |
+| GET/POST | `/tournaments` | view: any auth · write: `tournaments:manage` |
+| GET/PUT/DELETE | `/tournaments/{id}` | read: any · write: `tournaments:manage` |
+| POST | `/tournaments/{id}/finalize` | `tournaments:finalize` |
+| GET/POST | `/tournaments/{id}/events` | view: any auth · write: `tournaments:manage` |
+| GET/PUT/DELETE | `/events/{id}` | read: any · write: `tournaments:manage` |
+| GET/POST | `/events/{id}/registrations` | view: any auth · write: `tournaments:manage` |
+| GET/PUT/DELETE | `/registrations/{id}` | read: any · write: `tournaments:manage` |
+| POST/GET/DELETE | `/events/{id}/draw` | generate/reset: `draws:manage` · read: any auth |
+| GET | `/matches/{id}` | any authenticated |
+| POST | `/matches/{id}/score` | `scores:enter` |
+
+Registration validates age eligibility, active membership, duplicate registration,
+category gender scope, and (mixed doubles) opposite-gender partners — and only while the
+tournament is `registration_open`. The draw generator seeds players into a standard
+single-elimination bracket, awards byes when the field isn't a power of two, and
+auto-advances winners. `/matches/{id}/score` accepts either `score` (best-of-3 game list,
+BWF rules) or `walkover_winner_id`, updates the bracket, and marks the event
+`ongoing`/`completed`. Finalize refuses while any match is unplayed.
 
 ## Phase 4 — Ranking engine (planned)
 

@@ -24,11 +24,14 @@ Built in phases; each phase ends functional, tested, and deployable.
 - [x] Photo/logo upload to Supabase Storage (upload/delete endpoints + ImageUpload UI; set
       `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` to enable — public buckets auto-created)
 
-## Phase 3 — Tournaments
-- [ ] Tournament + event CRUD, status lifecycle
-- [ ] Registration with age/membership/duplicate validation
-- [ ] Draw generator (seeds, byes, random placement, knockout)
-- [ ] Match score entry, automatic winner advancement & bracket updates
+## ✅ Phase 3 — Tournaments (current)
+- [x] Tournament + event CRUD, status lifecycle (draft → registration → ongoing → completed)
+- [x] Event categories (global Senior/Junior defaults + federation-custom); seeded MS/WS/MD/WD/XD/U11–U19
+- [x] Registration with age eligibility, membership, duplicate, gender-scope & mixed-doubles validation
+- [x] Draw generator (standard seeding, byes for non-power-of-two fields, random placement, knockout)
+- [x] Match score entry (BWF rules, best-of-3), walkovers, automatic winner advancement & bracket updates
+- [x] Tournament finalize (guards against unfinished matches)
+- [x] 47 backend tests passing, ruff clean; frontend build/typecheck/lint pass; verified live on Supabase
 
 ## Phase 4 — Ranking engine
 - [ ] Configurable ranking rules & points tables

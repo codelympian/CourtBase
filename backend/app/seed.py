@@ -10,9 +10,10 @@ from sqlalchemy import select
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.security import hash_password
-from app.models.enums import RoleName
+from app.models.enums import Discipline, GenderScope, RoleName
 from app.models.federation import Federation
 from app.models.role import Role
+from app.models.tournament import EventCategory
 from app.models.user import User
 
 ROLE_DESCRIPTIONS = {
@@ -23,6 +24,23 @@ ROLE_DESCRIPTIONS = {
     RoleName.player: "View own profile, rankings, tournament & match history",
     RoleName.public: "Read-only public information",
 }
+
+# Global default event categories (federation_id=None), per the spec's Senior/Junior
+# lists. Federations can add further categories (e.g. gender/discipline-split junior
+# events) via the Event Categories admin screen.
+DEFAULT_CATEGORIES = [
+    # code, name, discipline, gender_scope, age_min, age_max
+    ("MS", "Men's Singles", Discipline.singles, GenderScope.men, None, None),
+    ("WS", "Women's Singles", Discipline.singles, GenderScope.women, None, None),
+    ("MD", "Men's Doubles", Discipline.doubles, GenderScope.men, None, None),
+    ("WD", "Women's Doubles", Discipline.doubles, GenderScope.women, None, None),
+    ("XD", "Mixed Doubles", Discipline.doubles, GenderScope.mixed, None, None),
+    ("U11", "Under-11", Discipline.singles, GenderScope.any, None, 10),
+    ("U13", "Under-13", Discipline.singles, GenderScope.any, None, 12),
+    ("U15", "Under-15", Discipline.singles, GenderScope.any, None, 14),
+    ("U17", "Under-17", Discipline.singles, GenderScope.any, None, 16),
+    ("U19", "Under-19", Discipline.singles, GenderScope.any, None, 18),
+]
 
 
 def seed() -> None:
@@ -53,6 +71,27 @@ def seed() -> None:
             db.add(fed)
             db.commit()
             db.refresh(fed)
+
+        # Global default event categories
+        for code, name, discipline, gender_scope, age_min, age_max in DEFAULT_CATEGORIES:
+            existing = db.execute(
+                select(EventCategory).where(
+                    EventCategory.federation_id.is_(None), EventCategory.code == code
+                )
+            ).scalar_one_or_none()
+            if not existing:
+                db.add(
+                    EventCategory(
+                        federation_id=None,
+                        code=code,
+                        name=name,
+                        discipline=discipline,
+                        gender_scope=gender_scope,
+                        age_min=age_min,
+                        age_max=age_max,
+                    )
+                )
+        db.commit()
 
         # Bootstrap platform super admin
         admin = db.execute(
