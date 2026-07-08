@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ImageUpload } from "@/components/image-upload";
 import { Pagination } from "@/components/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -279,7 +280,19 @@ export default function PlayersPage() {
             data.items.map((p) => (
               <TR key={p.id}>
                 <TD className="font-mono text-xs">{p.federation_player_code}</TD>
-                <TD className="font-medium">{p.full_name}</TD>
+                <TD className="font-medium">
+                  <div className="flex items-center gap-2">
+                    {p.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- remote Supabase URL
+                      <img
+                        src={p.photo_url}
+                        alt=""
+                        className="h-7 w-7 rounded-full object-cover"
+                      />
+                    ) : null}
+                    {p.full_name}
+                  </div>
+                </TD>
                 <TD>{p.gender}</TD>
                 <TD>{p.age_category ?? "—"}</TD>
                 <TD>{clubName(p.club_id)}</TD>
@@ -325,6 +338,27 @@ export default function PlayersPage() {
         <DialogHeader>
           <DialogTitle>{editing ? "Edit player" : "Add player"}</DialogTitle>
         </DialogHeader>
+        {editing && (
+          <div className="mb-4 border-b pb-4">
+            <Label className="mb-2 block">Photo</Label>
+            <ImageUpload
+              url={editing.photo_url}
+              alt={editing.full_name}
+              shape="circle"
+              disabled={!canManage}
+              uploader={async (file) =>
+                (await playersApi.uploadPhoto(editing.id, file)).photo_url
+              }
+              remover={async () => {
+                await playersApi.deletePhoto(editing.id);
+              }}
+              onChange={(url) => {
+                setEditing({ ...editing, photo_url: url });
+                qc.invalidateQueries({ queryKey: ["players"] });
+              }}
+            />
+          </div>
+        )}
         <form onSubmit={form.handleSubmit((v) => save.mutate(v))} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

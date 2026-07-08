@@ -21,3 +21,7 @@ class ValidationError(ServiceError):
 
 class ForbiddenError(ServiceError):
     """Caller lacks scope/permission for this specific resource."""
+
+
+class StorageError(ServiceError):
+    """Object storage is unavailable or misconfigured (upstream failure)."""

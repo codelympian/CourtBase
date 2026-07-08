@@ -16,6 +16,7 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import (
     get_current_active_user,
@@ -34,7 +35,7 @@ from app.schemas.player import (
     PlayerReadDetail,
     PlayerUpdate,
 )
-from app.services import player_io, player_service
+from app.services import player_io, player_service, storage_service
 from app.services.audit_service import record_audit
 from app.services.crud import resolve_write_federation
 
@@ -199,3 +200,57 @@ def delete_player(
         entity_id=str(player_id),
     )
     return Message(detail="Player deleted")
+
+
+@router.post("/{player_id}/photo", response_model=PlayerRead)
+def upload_player_photo(
+    player_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission(Permission.MANAGE_PLAYERS)),
+):
+    bucket = settings.STORAGE_PLAYER_PHOTOS_BUCKET
+    player = player_service.get_player(db, player_id, tenant_id=user.federation_id)
+    content, ext = storage_service.read_and_validate(file)
+    path = f"{player.federation_id}/{player.id}.{ext}"
+    url = storage_service.upload_image(bucket, path, content, ext)
+    player, previous = player_service.set_photo_url(
+        db, player_id, url=url, tenant_id=user.federation_id
+    )
+    # Remove a prior image if it lived at a different path (e.g. changed extension).
+    prev_path = storage_service.object_path_from_url(bucket, previous)
+    if prev_path and prev_path != path:
+        storage_service.delete_object(bucket, prev_path)
+    record_audit(
+        db,
+        action="player.photo.upload",
+        actor_user_id=user.id,
+        federation_id=player.federation_id,
+        entity_type="player",
+        entity_id=str(player.id),
+    )
+    return _read(player)
+
+
+@router.delete("/{player_id}/photo", response_model=PlayerRead)
+def delete_player_photo(
+    player_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission(Permission.MANAGE_PLAYERS)),
+):
+    bucket = settings.STORAGE_PLAYER_PHOTOS_BUCKET
+    player, previous = player_service.set_photo_url(
+        db, player_id, url=None, tenant_id=user.federation_id
+    )
+    prev_path = storage_service.object_path_from_url(bucket, previous)
+    if prev_path:
+        storage_service.delete_object(bucket, prev_path)
+    record_audit(
+        db,
+        action="player.photo.delete",
+        actor_user_id=user.id,
+        federation_id=player.federation_id,
+        entity_type="player",
+        entity_id=str(player.id),
+    )
+    return _read(player)

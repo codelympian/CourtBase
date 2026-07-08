@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ImageUpload } from "@/components/image-upload";
 import { Pagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -151,7 +152,19 @@ export default function ClubsPage() {
           ) : data && data.items.length > 0 ? (
             data.items.map((c) => (
               <TR key={c.id}>
-                <TD className="font-medium">{c.name}</TD>
+                <TD className="font-medium">
+                  <div className="flex items-center gap-2">
+                    {c.logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- remote Supabase URL
+                      <img
+                        src={c.logo_url}
+                        alt=""
+                        className="h-7 w-7 rounded object-cover"
+                      />
+                    ) : null}
+                    {c.name}
+                  </div>
+                </TD>
                 <TD>{stateName(c.state_id)}</TD>
                 <TD>{c.coach_name ?? "—"}</TD>
                 <TD>{c.contact_email ?? c.contact_phone ?? "—"}</TD>
@@ -193,6 +206,25 @@ export default function ClubsPage() {
         <DialogHeader>
           <DialogTitle>{editing ? "Edit club" : "Add club"}</DialogTitle>
         </DialogHeader>
+        {editing && (
+          <div className="mb-4 border-b pb-4">
+            <Label className="mb-2 block">Logo</Label>
+            <ImageUpload
+              url={editing.logo_url}
+              alt={editing.name}
+              shape="square"
+              disabled={!canManage}
+              uploader={async (file) => (await clubsApi.uploadLogo(editing.id, file)).logo_url}
+              remover={async () => {
+                await clubsApi.deleteLogo(editing.id);
+              }}
+              onChange={(url) => {
+                setEditing({ ...editing, logo_url: url });
+                qc.invalidateQueries({ queryKey: ["clubs"] });
+              }}
+            />
+          </div>
+        )}
         <form onSubmit={form.handleSubmit((v) => save.mutate(v))} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>

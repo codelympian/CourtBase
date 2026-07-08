@@ -15,3 +15,5 @@ python-multipart>=0.0.20
 slowapi>=0.1.9
 # Excel (.xlsx) import/export — pure Python.
 openpyxl>=3.1.5
+# HTTP client for the Supabase Storage REST API.
+httpx>=0.28.1

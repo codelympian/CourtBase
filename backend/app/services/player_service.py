@@ -194,3 +194,15 @@ def delete_player(db: Session, player_id: uuid.UUID, *, tenant_id: uuid.UUID | N
     obj = get_player(db, player_id, tenant_id=tenant_id)
     obj.deleted_at = datetime.now(UTC)
     db.commit()
+
+
+def set_photo_url(
+    db: Session, player_id: uuid.UUID, *, url: str | None, tenant_id: uuid.UUID | None
+) -> tuple[Player, str | None]:
+    """Set (or clear) a player's photo_url. Returns ``(player, previous_url)``."""
+    obj = get_player(db, player_id, tenant_id=tenant_id)
+    previous = obj.photo_url
+    obj.photo_url = url
+    db.commit()
+    db.refresh(obj)
+    return obj, previous

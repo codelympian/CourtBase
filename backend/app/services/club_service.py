@@ -123,3 +123,15 @@ def delete_club(db: Session, club_id: uuid.UUID, *, tenant_id: uuid.UUID | None)
     obj = get_club(db, club_id, tenant_id=tenant_id)
     obj.deleted_at = datetime.now(UTC)
     db.commit()
+
+
+def set_logo_url(
+    db: Session, club_id: uuid.UUID, *, url: str | None, tenant_id: uuid.UUID | None
+) -> tuple[Club, str | None]:
+    """Set (or clear) a club's logo_url. Returns ``(club, previous_url)``."""
+    obj = get_club(db, club_id, tenant_id=tenant_id)
+    previous = obj.logo_url
+    obj.logo_url = url
+    db.commit()
+    db.refresh(obj)
+    return obj, previous

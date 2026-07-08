@@ -44,6 +44,14 @@ class Settings(BaseSettings):
     RATE_LIMIT_DEFAULT: str = "200/minute"
     RATE_LIMIT_AUTH: str = "10/minute"
 
+    # Supabase Storage (player photos, club logos). Uses the service_role key
+    # server-side; uploads are authorized by our own RBAC, so buckets are public-read.
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_KEY: str = ""
+    STORAGE_PLAYER_PHOTOS_BUCKET: str = "player-photos"
+    STORAGE_CLUB_LOGOS_BUCKET: str = "club-logos"
+    STORAGE_MAX_IMAGE_MB: int = 5
+
     # Bootstrap super admin
     FIRST_SUPERUSER_EMAIL: str = "admin@courtbase.dev"
     FIRST_SUPERUSER_PASSWORD: str = "ChangeMe123!"
@@ -62,6 +70,10 @@ class Settings(BaseSettings):
     @property
     def is_sqlite(self) -> bool:
         return self.DATABASE_URL.startswith("sqlite")
+
+    @property
+    def storage_enabled(self) -> bool:
+        return bool(self.SUPABASE_URL and self.SUPABASE_SERVICE_KEY)
 
 
 @lru_cache

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import (
     get_current_active_user,
@@ -17,7 +18,7 @@ from app.core.rbac import Permission
 from app.models.user import User
 from app.schemas.club import ClubCreate, ClubRead, ClubReadDetail, ClubUpdate
 from app.schemas.common import Message, Page
-from app.services import club_service
+from app.services import club_service, storage_service
 from app.services.audit_service import record_audit
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
@@ -109,3 +110,56 @@ def delete_club(
         entity_id=str(club_id),
     )
     return Message(detail="Club deleted")
+
+
+@router.post("/{club_id}/logo", response_model=ClubRead)
+def upload_club_logo(
+    club_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission(Permission.MANAGE_CLUBS)),
+):
+    bucket = settings.STORAGE_CLUB_LOGOS_BUCKET
+    club = club_service.get_club(db, club_id, tenant_id=user.federation_id)
+    content, ext = storage_service.read_and_validate(file)
+    path = f"{club.federation_id}/{club.id}.{ext}"
+    url = storage_service.upload_image(bucket, path, content, ext)
+    club, previous = club_service.set_logo_url(
+        db, club_id, url=url, tenant_id=user.federation_id
+    )
+    prev_path = storage_service.object_path_from_url(bucket, previous)
+    if prev_path and prev_path != path:
+        storage_service.delete_object(bucket, prev_path)
+    record_audit(
+        db,
+        action="club.logo.upload",
+        actor_user_id=user.id,
+        federation_id=club.federation_id,
+        entity_type="club",
+        entity_id=str(club.id),
+    )
+    return club
+
+
+@router.delete("/{club_id}/logo", response_model=ClubRead)
+def delete_club_logo(
+    club_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission(Permission.MANAGE_CLUBS)),
+):
+    bucket = settings.STORAGE_CLUB_LOGOS_BUCKET
+    club, previous = club_service.set_logo_url(
+        db, club_id, url=None, tenant_id=user.federation_id
+    )
+    prev_path = storage_service.object_path_from_url(bucket, previous)
+    if prev_path:
+        storage_service.delete_object(bucket, prev_path)
+    record_audit(
+        db,
+        action="club.logo.delete",
+        actor_user_id=user.id,
+        federation_id=club.federation_id,
+        entity_type="club",
+        entity_id=str(club.id),
+    )
+    return club

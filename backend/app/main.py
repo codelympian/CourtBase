@@ -17,6 +17,7 @@ from app.services.errors import (
     ForbiddenError,
     NotFoundError,
     ServiceError,
+    StorageError,
     ValidationError,
 )
 
@@ -25,6 +26,7 @@ _SERVICE_ERROR_STATUS: dict[type[ServiceError], int] = {
     ConflictError: 409,
     ValidationError: 422,
     ForbiddenError: 403,
+    StorageError: 503,
 }
 
 

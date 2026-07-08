@@ -159,6 +159,12 @@ export const clubsApi = {
   update: (id: string, data: Partial<ClubInput>) =>
     apiFetch<Club>(`/clubs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   remove: (id: string) => apiFetch<{ detail: string }>(`/clubs/${id}`, { method: "DELETE" }),
+  uploadLogo: (id: string, file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return apiUpload<Club>(`/clubs/${id}/logo`, fd);
+  },
+  deleteLogo: (id: string) => apiFetch<Club>(`/clubs/${id}/logo`, { method: "DELETE" }),
 };
 
 // ------------------------------------------------------------------ players API
@@ -187,6 +193,12 @@ export const playersApi = {
     return apiUpload<ImportResult>("/players/import", fd);
   },
   exportFile: (format: "csv" | "xlsx") => apiDownload(`/players/export?format=${format}`),
+  uploadPhoto: (id: string, file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return apiUpload<Player>(`/players/${id}/photo`, fd);
+  },
+  deletePhoto: (id: string) => apiFetch<Player>(`/players/${id}/photo`, { method: "DELETE" }),
 };
 
 // ------------------------------------------------------------------ stats API

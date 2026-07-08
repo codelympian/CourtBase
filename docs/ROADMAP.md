@@ -21,7 +21,8 @@ Built in phases; each phase ends functional, tested, and deployable.
 - [x] Search, filtering (status/gender/club/state), pagination
 - [x] Dashboard stat cards wired to a live `/stats/overview` endpoint
 - [x] 20 backend tests passing, ruff clean; frontend build + typecheck pass
-- [ ] Photo/logo upload to Supabase Storage (URL fields ready; upload deferred — needs Supabase keys)
+- [x] Photo/logo upload to Supabase Storage (upload/delete endpoints + ImageUpload UI; set
+      `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` to enable — public buckets auto-created)
 
 ## Phase 3 — Tournaments
 - [ ] Tournament + event CRUD, status lifecycle

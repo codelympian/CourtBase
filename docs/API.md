@@ -62,7 +62,13 @@ tenant-scoped and audited.
 | GET/PUT/DELETE | `/players/{id}` | — / PlayerUpdate / — | read: any · write: `players:manage` |
 | POST | `/players/import` | multipart `file` (CSV/XLSX), `?federation_id` (super admin) | `players:import` |
 | GET | `/players/export` | `format=csv\|xlsx` | `reports:export` |
+| POST/DELETE | `/players/{id}/photo` | multipart `file` (PNG/JPEG/WebP ≤5MB) / — | `players:manage` |
+| POST/DELETE | `/clubs/{id}/logo` | multipart `file` (PNG/JPEG/WebP ≤5MB) / — | `clubs:manage` |
 | GET | `/stats/overview` | — | any authenticated |
+
+Image uploads go to public Supabase Storage buckets (`player-photos`, `club-logos`),
+auto-created on first use; the object's public URL (cache-busted) is stored on the row.
+Returns 503 if storage isn't configured.
 
 Players carry derived, unstored `age` and `age_category` (U11…U19 / Senior) in responses.
 Import upserts by `(federation_id, federation_player_code)`; club/state are matched by name
