@@ -72,6 +72,38 @@ class Ranking(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     )
 
 
+class RankingAward(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
+    """Point ledger: one row per points award to a player in a category.
+
+    Total ranking points for a player/category = sum of their awards. Baseline
+    (imported) rankings are stored here too, so ``rankings`` is always a pure
+    derived snapshot. Tournament awards carry ``tournament_id`` so finalize can
+    be re-run idempotently (delete this tournament's awards, then re-insert).
+    """
+
+    __tablename__ = "ranking_awards"
+
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("players.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    category_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("event_categories.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    source: Mapped[RankingSource] = mapped_column(
+        enum_col(RankingSource), default=RankingSource.computed, nullable=False
+    )
+    tournament_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("tournaments.id", ondelete="CASCADE"), index=True
+    )
+    event_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("events.id", ondelete="CASCADE")
+    )
+    result_key: Mapped[str | None] = mapped_column(String(40))
+    reason: Mapped[str | None] = mapped_column(String(255))
+    awarded_on: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+
+
 class RankingHistory(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     """Append-only log of every ranking change."""
 

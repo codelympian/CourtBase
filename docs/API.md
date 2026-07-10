@@ -99,10 +99,25 @@ auto-advances winners. `/matches/{id}/score` accepts either `score` (best-of-3 g
 BWF rules) or `walkover_winner_id`, updates the bracket, and marks the event
 `ongoing`/`completed`. Finalize refuses while any match is unplayed.
 
-## Phase 4 — Ranking engine (planned)
+## Phase 4 — Ranking engine (implemented)
 
-`/ranking-rules`, `/rankings` (current), `/rankings/recalculate`,
-`/players/{id}/ranking-history`.
+| Method | Path | Roles |
+|--------|------|-------|
+| GET/POST | `/ranking-rules` | view: any auth · write: `ranking_rules:manage` |
+| GET/PUT/DELETE | `/ranking-rules/{id}` | read: any · write: `ranking_rules:manage` |
+| GET | `/rankings?category_id=&published=&as_of=` | any authenticated |
+| GET | `/rankings/history?player_id=&category_id=` | any authenticated |
+| POST | `/rankings/recalculate` (body `{category_id?}`) | `rankings:approve` |
+| POST | `/rankings/publish` (body `{category_id, as_of?}`) | `rankings:approve` |
+
+Points accumulate in an append-only ledger (`ranking_awards`); a player's total per
+category is the sum of their awards (imported baseline + tournament results). Finalizing a
+tournament derives each player's finishing result from the bracket, looks up the active rule
+for `(level, category)` (category-specific preferred over level-wide), awards points to the
+player (and doubles partner), recomputes player statistics, and recalculates the affected
+categories' standings (unpublished until an admin publishes). Recalculation is idempotent and
+resolves ties by points → titles → finals → semi-finals → name. `rankings` is a dated
+snapshot with `rank`, `previous_rank`, `movement`; `ranking_history` is the timeline.
 
 ## Phase 5 — Public website API (planned, unauthenticated, cached)
 

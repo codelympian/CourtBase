@@ -402,3 +402,94 @@ export const matchesApi = {
   score: (id: string, data: MatchScoreInput) =>
     apiFetch<Match>(`/matches/${id}/score`, { method: "POST", body: JSON.stringify(data) }),
 };
+
+// --------------------------------------------------------------- ranking rules
+export interface RankingPoint {
+  id: string;
+  result_key: string;
+  points: number;
+}
+
+export interface RankingRule {
+  id: string;
+  federation_id: string;
+  name: string;
+  level: TournamentLevel;
+  category_id: string | null;
+  is_active: boolean;
+  points: RankingPoint[];
+  created_at: string;
+  updated_at: string;
+}
+
+export type RankingRuleInput = {
+  name: string;
+  level: TournamentLevel;
+  category_id?: string | null;
+  points: { result_key: string; points: number }[];
+};
+
+export const rankingRulesApi = {
+  list: () => apiFetch<RankingRule[]>("/ranking-rules"),
+  get: (id: string) => apiFetch<RankingRule>(`/ranking-rules/${id}`),
+  create: (data: RankingRuleInput) =>
+    apiFetch<RankingRule>("/ranking-rules", { method: "POST", body: JSON.stringify(data) }),
+  update: (
+    id: string,
+    data: Partial<RankingRuleInput> & { is_active?: boolean },
+  ) => apiFetch<RankingRule>(`/ranking-rules/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: string) =>
+    apiFetch<{ detail: string }>(`/ranking-rules/${id}`, { method: "DELETE" }),
+};
+
+// -------------------------------------------------------------------- rankings
+export interface RankingRow {
+  id: string;
+  federation_id: string;
+  player_id: string;
+  category_id: string;
+  points: number;
+  rank: number;
+  previous_rank: number | null;
+  movement: number;
+  as_of: string;
+  is_published: boolean;
+  source: "imported" | "computed";
+  player_name: string | null;
+  club_name: string | null;
+}
+
+export interface RankingHistoryEntry {
+  id: string;
+  player_id: string;
+  category_id: string;
+  rank: number;
+  previous_rank: number | null;
+  points: number;
+  movement: number;
+  reason: string | null;
+  snapshot_date: string;
+}
+
+export interface RankingActionResult {
+  categories: number;
+  players: number;
+  as_of: string;
+}
+
+export const rankingsApi = {
+  list: (category_id: string, published = false) =>
+    apiFetch<RankingRow[]>(`/rankings${qs({ category_id, published })}`),
+  history: (player_id: string, category_id?: string) =>
+    apiFetch<RankingHistoryEntry[]>(`/rankings/history${qs({ player_id, category_id })}`),
+  recalculate: (category_id?: string) =>
+    apiFetch<RankingActionResult>("/rankings/recalculate", {
+      method: "POST",
+      body: JSON.stringify({ category_id: category_id ?? null }),
+    }),
+  publish: (category_id: string) =>
+    apiFetch<RankingActionResult>("/rankings/publish", {
+      method: "POST",
+      body: JSON.stringify({ category_id }),
+    }),
+};

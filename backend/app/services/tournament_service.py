@@ -128,5 +128,14 @@ def finalize_tournament(
         )
     obj.status = TournamentStatus.completed
     db.commit()
+
+    # Ranking engine: award points, refresh player stats, and recompute the
+    # standings for every affected category (unpublished — an admin approves).
+    from app.services import player_stats_service, ranking_service
+
+    ranking_service.award_tournament(db, obj)
+    player_stats_service.recompute_for_tournament(db, obj.id)
+    ranking_service.recalculate(db, federation_id=obj.federation_id)
+
     db.refresh(obj)
     return obj

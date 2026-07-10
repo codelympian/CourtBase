@@ -21,7 +21,13 @@ from app.models.match import Match
 from app.models.notification import Notification
 from app.models.org import Club, StateAssociation
 from app.models.player import Player
-from app.models.ranking import Ranking, RankingHistory, RankingPoint, RankingRule
+from app.models.ranking import (
+    Ranking,
+    RankingAward,
+    RankingHistory,
+    RankingPoint,
+    RankingRule,
+)
 from app.models.registration import Registration
 from app.models.role import Role, user_roles
 from app.models.stats import PlayerStats
@@ -47,6 +53,7 @@ __all__ = [
     "PlayerStats",
     "PlayerStatus",
     "Ranking",
+    "RankingAward",
     "RankingHistory",
     "RankingPoint",
     "RankingRule",

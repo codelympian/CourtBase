@@ -8,11 +8,15 @@ import tempfile
 import pytest
 
 # Configure the environment BEFORE importing the app, so settings pick it up.
+# Env vars take precedence over .env, keeping tests isolated from real infra.
 _DB_FD, _DB_PATH = tempfile.mkstemp(suffix=".sqlite3")
 os.environ["DATABASE_URL"] = f"sqlite+pysqlite:///{_DB_PATH}"
 os.environ["SECRET_KEY"] = "test-secret-key-not-for-production"
 os.environ["ENVIRONMENT"] = "development"
 os.environ["RATE_LIMIT_AUTH"] = "1000/minute"
+# Never touch real Supabase Storage from tests (the dev .env has live keys).
+os.environ["SUPABASE_URL"] = ""
+os.environ["SUPABASE_SERVICE_KEY"] = ""
 
 from fastapi.testclient import TestClient  # noqa: E402
 

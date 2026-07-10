@@ -33,11 +33,16 @@ Built in phases; each phase ends functional, tested, and deployable.
 - [x] Tournament finalize (guards against unfinished matches)
 - [x] 47 backend tests passing, ruff clean; frontend build/typecheck/lint pass; verified live on Supabase
 
-## Phase 4 — Ranking engine
-- [ ] Configurable ranking rules & points tables
-- [ ] Automatic point awards, recalculation, tie resolution
-- [ ] Ranking history, movement, timeline, historical graphs
-- [ ] Public rankings + admin approval/publish flow
+## ✅ Phase 4 — Ranking engine (current)
+- [x] Configurable ranking rules & points tables (per level, optional per category)
+- [x] Point ledger (`ranking_awards`) → cumulative, idempotent, auditable totals
+- [x] Automatic point awards on tournament finalize (results derived from the bracket)
+- [x] Recalculation with deterministic tie resolution (points → titles → finals → SF → name)
+- [x] Ranking history, movement, timeline + historical graph (Recharts)
+- [x] Public/draft standings + admin recalculate & publish (approval) flow
+- [x] Player statistics recompute (matches/wins/losses/win%/titles/finals/semis)
+- [x] 52 backend tests passing, ruff clean; frontend build/typecheck/lint pass
+- [ ] Apply migration `7bfaa7427765` + re-seed on Supabase (pending — project was unreachable)
 
 ## Phase 5 — Reports, public API, deployment
 - [ ] Reports (PDF/Excel/CSV): player list, results, rankings, club & state rankings

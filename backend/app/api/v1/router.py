@@ -12,6 +12,8 @@ from app.api.v1.routes import (
     health,
     matches,
     players,
+    ranking_rules,
+    rankings,
     registrations,
     states,
     stats,
@@ -30,3 +32,5 @@ api_router.include_router(tournaments.router)
 api_router.include_router(events.router)
 api_router.include_router(registrations.router)
 api_router.include_router(matches.router)
+api_router.include_router(ranking_rules.router)
+api_router.include_router(rankings.router)

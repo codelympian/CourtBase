@@ -49,6 +49,9 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         Permission.IMPORT_PLAYERS,
         Permission.EXPORT_REPORTS,
         Permission.APPROVE_RANKINGS,
+        # Ranking rules are per-federation (tenant) data, so a federation admin
+        # configures their own; the platform super admin can edit any.
+        Permission.MANAGE_RANKING_RULES,
         Permission.MANAGE_DRAWS,
         Permission.ENTER_SCORES,
         Permission.FINALIZE_TOURNAMENTS,

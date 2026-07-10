@@ -10,8 +10,9 @@ from sqlalchemy import select
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.security import hash_password
-from app.models.enums import Discipline, GenderScope, RoleName
+from app.models.enums import Discipline, GenderScope, RoleName, TournamentLevel
 from app.models.federation import Federation
+from app.models.ranking import RankingPoint, RankingRule
 from app.models.role import Role
 from app.models.tournament import EventCategory
 from app.models.user import User
@@ -92,6 +93,42 @@ def seed() -> None:
                     )
                 )
         db.commit()
+
+        # Default ranking rule for the demo federation (the spec's example).
+        existing_rule = db.execute(
+            select(RankingRule).where(
+                RankingRule.federation_id == fed.id,
+                RankingRule.level == TournamentLevel.national_championship,
+                RankingRule.category_id.is_(None),
+            )
+        ).scalar_one_or_none()
+        if not existing_rule:
+            rule = RankingRule(
+                federation_id=fed.id,
+                name="National Championship",
+                level=TournamentLevel.national_championship,
+                category_id=None,
+                is_active=True,
+            )
+            db.add(rule)
+            db.flush()
+            for result_key, points in (
+                ("winner", 5000),
+                ("runner_up", 4250),
+                ("semi_final", 3500),
+                ("quarter_final", 2750),
+                ("round_16", 2000),
+                ("round_32", 1250),
+            ):
+                db.add(
+                    RankingPoint(
+                        federation_id=fed.id,
+                        rule_id=rule.id,
+                        result_key=result_key,
+                        points=points,
+                    )
+                )
+            db.commit()
 
         # Bootstrap platform super admin
         admin = db.execute(
